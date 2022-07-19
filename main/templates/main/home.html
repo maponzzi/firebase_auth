@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Login page</title>
+</head>
+<body>
+<h2>
+	Inicia sessión con Usuario y contraseña
+	<button onclick="location.href='/rest/api-auth/login/';">Iniciar sesion Estandar</button>
+</h2>
+<h2>
+	Inicia sesión con tu cuenta de Google
+	<button onclick="googleAuth()">Iniciar sesión</button>
+</h2>
+
+<h4>Usuario logueado:</h4>
+<div id="data">
+	<div><span>Email: </span> <span id="email"></span> </div>
+</div>
+
+
+<h4>Consulta:</h4>
+<div id="results"></div>
+
+<hr>
+<button onclick="logout();">Salir</button>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+<script src="https://www.gstatic.com/firebasejs/9.9.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.9.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.9.0/firebase-auth-compat.js"></script>
+<script>
+	const firebaseApp = firebase.initializeApp({ 
+		apiKey: "AIzaSyDy2TNb8VcCKMLV3_IQc29w08bgojx_-SQ",
+		authDomain: "siga-40173.firebaseapp.com",
+		projectId: "siga-40173",
+		storageBucket: "siga-40173.appspot.com",
+		messagingSenderId: "765761948822",
+		appId: "1:765761948822:web:b86b85672bdd5e946a86b7",
+		measurementId: "G-WQZTRE78P8"
+	});
+	const db = firebaseApp.firestore();
+	const auth = firebaseApp.auth();
+
+	// $(document).ready( function () {
+	// 	IsAuthenticated();
+	// });
+
+
+	function googleAuth() {
+		var provider = new firebase.auth.GoogleAuthProvider();
+		firebase.auth()
+			.signInWithPopup(provider)
+			.then((result) => {
+				/** @type {firebase.auth.OAuthCredential} */
+				var credential = result.credential;
+
+				// This gives you a Google Access Token. You can use it to access the Google API.
+				var token = credential.accessToken;
+				// The signed-in user info.
+				var user = result.user;
+				$('#email').text(user.email);
+				
+				
+				auth.currentUser.getIdToken().then(function(idToken) {
+  					// Send token to your backend via HTTPS
+					// ...
+					var authorizationToken = 'Bearer ' + idToken;
+					// console.log(authorizationToken);
+					$.ajax({
+						type: 'GET',
+						url: "/rest/users/",
+						headers: {
+							"Authorization": authorizationToken,
+							"Content-Type": "application/json"
+						},
+						success: function(data) {
+							// console.log(data);
+							$("#results").append('<div>Usuarios registrados:</div>');
+	    					$.each(data, function(k, v) {
+	    						$.each(v, function(l, w) {
+	    							item = $('<div>').text(l + ': ' + w);
+	    							// console.log(item);
+	    							$("#results").append(item);	
+	    						});
+	    						$("#results").append('<hr>');
+	    					});
+						}
+					});
+				}).catch(function(error) {
+  					// Handle error
+				});
+				
+
+			}).catch((error) => {
+				// Handle Errors here.
+				var errorCode = error.code;
+				console.log('error code: ' + errorCode);
+				var errorMessage = error.message;
+				console.log('error message: ' + errorMessage);
+				// The email of the user's account used.
+				var email = error.email;
+				console.log('email: ' + email);
+				// The firebase.auth.AuthCredential type that was used.
+				var credential = error.credential;
+				console.log('credential: ' + credential);
+				// ...
+			});
+	}
+
+	function IsAuthenticated() {
+		if (auth.currentUser.emailVerified) {
+			$('#email').text(auth.currentUser.email);
+		} else {
+			$('#data').hide();
+		}
+	}
+
+	function logout(){
+		firebase.auth().signOut().then(() => {
+			location.reload();
+			console.log('cerraste session');
+		}).catch((error) => {
+			console.log(error);
+		});
+	}
+</script>
+</body>
+</html>
